@@ -13,6 +13,7 @@ auto-ssh-agent() {
             source "$XDG_RUNTIME_DIR/.ssh-agent.env" > /dev/null
         else
             # HACK: workaround needed to work on Ubuntu, which likes starting its own ssh-agent that we can't use easily
+            echo "There is no ssh-agent running, starting a new one ..."
             ssh-agent -t 10h > "$XDG_RUNTIME_DIR/.ssh-agent.env"
             source "$XDG_RUNTIME_DIR/.ssh-agent.env" > /dev/null
         fi
