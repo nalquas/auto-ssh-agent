@@ -1,27 +1,32 @@
-# NOTE: no shebang added on purpose because this may be imported into different shells, like bash or zsh
+#!/bin/bash
 
-# Create a helper function for quickly setting up ssh-agent when needed
-auto-ssh-agent() {
-    echo "Preparing ssh-agent ..."
-    if ! pgrep -u "$USER" ssh-agent > /dev/null; then
-        echo "There is no ssh-agent running, starting a new one ..."
-        ssh-agent -t 10h > "$XDG_RUNTIME_DIR/.ssh-agent.env"
-        source "$XDG_RUNTIME_DIR/.ssh-agent.env" > /dev/null
-    elif [[ ! "$SSH_AGENT_PID" ]]; then
-        if [ -f "$XDG_RUNTIME_DIR/.ssh-agent.env" ]; then
-            echo "There already is an ssh-agent running, connecting to it ..."
-            source "$XDG_RUNTIME_DIR/.ssh-agent.env" > /dev/null
-        else
-            # HACK: workaround needed to work on Ubuntu, which likes starting its own ssh-agent that we can't use easily
-            echo "There is no ssh-agent running, starting a new one ..."
-            ssh-agent -t 10h > "$XDG_RUNTIME_DIR/.ssh-agent.env"
-            source "$XDG_RUNTIME_DIR/.ssh-agent.env" > /dev/null
-        fi
-    else
-        echo "Already connected to an ssh-agent!"
-    fi
-    echo "... done!"
+_auto-ssh-agent-load-agent() {
+	source "$XDG_RUNTIME_DIR/.ssh-agent.env" >/dev/null
 }
 
-# Load SSH stuff
+_auto-ssh-agent-create-new-agent() {
+	ssh-agent -t 10h >"$XDG_RUNTIME_DIR/.ssh-agent.env"
+}
+
+auto-ssh-agent() {
+	echo -n "Preparing ssh-agent ... "
+
+	if [ -z "${XDG_RUNTIME_DIR:-}" ]; then
+		echo "XDG_RUNTIME_DIR is not set, cannot manage ssh-agent environment file!"
+		return 1
+	fi
+
+	if ! pgrep -u "$USER" ssh-agent >/dev/null; then
+		echo -n "no ssh-agent running, starting a new one ... "
+		_auto-ssh-agent-create-new-agent
+	elif [ ! -f "$XDG_RUNTIME_DIR/.ssh-agent.env" ]; then
+		# HACK: workaround needed to work on Ubuntu, which likes starting its own ssh-agent that we can't use easily
+		echo -n "inaccessible ssh-agent running, starting a new one ... "
+		_auto-ssh-agent-create-new-agent
+	fi
+	echo -n "connecting ... "
+	_auto-ssh-agent-load-agent
+	echo "done!"
+}
+
 auto-ssh-agent
