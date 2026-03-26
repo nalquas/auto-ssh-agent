@@ -29,3 +29,6 @@ auto-ssh-agent() {
 	_auto-ssh-agent-load-agent
 	echo "done!"
 }
+
+# Automatically run the function with the first argument as lifetime, or default to 10 hours
+auto-ssh-agent "${1:-10h}"
