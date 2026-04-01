@@ -17,7 +17,7 @@ auto-ssh-agent() {
 		return 1
 	fi
 
-	if ! pgrep -u "$USER" ssh-agent >/dev/null; then
+	if ! pgrep -x -u "$USER" ssh-agent >/dev/null; then
 		echo -n "no ssh-agent running, starting a new one ... "
 		_auto-ssh-agent-create-new-agent "$lifetime"
 	elif [ ! -f "$XDG_RUNTIME_DIR/.ssh-agent.env" ]; then
