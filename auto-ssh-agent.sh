@@ -1,16 +1,43 @@
 #!/bin/bash
 
 _auto-ssh-agent-load-agent() {
-	source "$XDG_RUNTIME_DIR/.ssh-agent.env" >/dev/null
+	local file="$XDG_RUNTIME_DIR/.ssh-agent.env"
+
+	# Verify ownership & permissions
+	if [[ ! -f $file || $(stat -c '%u:%g:%a' "$file") != "$UID:$(id -g):600" ]]; then
+		echo "Unsafe ssh‑agent environment file: $file" >&2
+		return 1
+	fi
+
+	# Parse safely
+	# NOTE: this is done instead of a simple source call to avoid security issues with potential arbitrary code execution
+	local sock pid
+	while read -r line; do
+		case "$line" in
+		SSH_AUTH_SOCK=*)
+			sock=${line#*=}
+			sock=${sock%%;*}
+			;;
+		SSH_AGENT_PID=*)
+			pid=${line#*=}
+			pid=${pid%%;*}
+			;;
+		esac
+	done <"$file"
+
+	export SSH_AUTH_SOCK="$sock"
+	export SSH_AGENT_PID="$pid"
 }
 
 _auto-ssh-agent-create-new-agent() {
-	ssh-agent -t "${1:-10h}" >"$XDG_RUNTIME_DIR/.ssh-agent.env"
+	local file="$XDG_RUNTIME_DIR/.ssh-agent.env"
+	ssh-agent -t "${1:-10h}" >"$file"
+	chmod 600 "$file"
 }
 
 auto-ssh-agent() {
 	echo -n "Preparing ssh-agent ... "
-	lifetime="${1:-10h}"
+	local lifetime="${1:-10h}"
 
 	if [ -z "${XDG_RUNTIME_DIR:-}" ]; then
 		echo "XDG_RUNTIME_DIR is not set, cannot manage ssh-agent environment file!"
