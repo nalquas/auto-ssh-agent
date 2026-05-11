@@ -5,7 +5,7 @@ _auto-ssh-agent-load-agent() {
 
 	# Verify ownership & permissions
 	if [[ ! -f $file || $(stat -c '%u:%g:%a' "$file") != "$UID:$(id -g):600" ]]; then
-		echo "Unsafe ssh‑agent environment file: $file" >&2
+		echo "Unsafe ssh-agent environment file: $file"
 		return 1
 	fi
 
