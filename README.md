@@ -12,3 +12,12 @@ source /path/to/auto-ssh-agent/auto-ssh-agent.sh 10h
 ```
 
 You can vary the lifetime of the ssh-agent as wanted, e.g. `2h`. If the lifetime is omitted, it defaults to `10h`.
+
+## Tips and tricks
+
+To make ssh (and thus git) automatically add keys to the agent, add the following to the ssh config at `~/.ssh/config`:
+
+```conf
+Host *
+    AddKeysToAgent yes
+```
